@@ -17,19 +17,19 @@ fn main() {
 
 fn generate(args: GenerateArgs) {
     let table = RainbowTableBuilder::new(RainbowTableConfig {
-        charset: args.charset.unwrap_or(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".to_string(),
-        ),
+        charset: args
+            .charset
+            .unwrap_or("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".to_string()),
         chain_length: args.chain_length.unwrap_or(5),
         chain_number: args.chain_number.unwrap_or(10),
         password_length: args.password_length.unwrap_or(12),
+        #[cfg(debug_assertions)]
+        debug: false,
     })
     .generate();
 
     if let Some(output_file) = args.output_file {
-        table
-            .write_to_file(&output_file)
-            .expect("filename should be correct");
+        table.write_to_file(&output_file).expect("filename should be correct");
     } else {
         println!("{table}");
     }
@@ -39,8 +39,7 @@ fn crack(args: CrackArgs) {
     let hash = args.hash;
     let input_file = format!("./{}", args.input_file.unwrap_or("table.txt".into()));
 
-    let table =
-        RainbowTableBuilder::from_file(&input_file).expect("The file should be properly formatted");
+    let table = RainbowTableBuilder::from_file(&input_file).expect("The file should be properly formatted");
 
     let result = table.crack(&hash);
 
@@ -56,6 +55,8 @@ fn debug() {
         chain_length: 3,
         chain_number: 2,
         password_length: 8,
+        #[cfg(debug_assertions)]
+        debug: true,
     })
     .generate();
 

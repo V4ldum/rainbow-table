@@ -30,7 +30,8 @@ impl RainbowTableBuilder {
         let mut chains = Vec::with_capacity(config.chain_number);
 
         for i in 0..self.0.chain_number {
-            let seed = if cfg!(debug_assertions) {
+            #[cfg(debug_assertions)]
+            let seed = if config.debug {
                 if i == 0 {
                     Clear::new("ObdcZGEh")
                 } else {
@@ -39,9 +40,13 @@ impl RainbowTableBuilder {
             } else {
                 self.generate_random_seed(&mut rng)
             };
+            #[cfg(not(debug_assertions))]
+            let seed = self.generate_random_seed(&mut rng);
 
             #[cfg(debug_assertions)]
-            print!("{seed}");
+            if config.debug {
+                print!("{seed}");
+            }
 
             let mut hash;
             let mut reduced = seed.clone();
@@ -50,30 +55,25 @@ impl RainbowTableBuilder {
                 reduced = Clear::from_hash(&hash, config.password_length, i, &config.charset);
 
                 #[cfg(debug_assertions)]
-                print!("-> {hash} -> {reduced}")
+                if config.debug {
+                    print!("-> {hash} -> {reduced}")
+                }
             }
             chains.push((seed.to_string(), reduced.to_string()));
 
             #[cfg(debug_assertions)]
-            println!();
+            if config.debug {
+                println!();
+            }
         }
 
-        RainbowTable {
-            config: self.0,
-            chains,
-        }
+        RainbowTable { config: self.0, chains }
     }
 
     fn generate_random_seed(&self, rng: &mut ThreadRng) -> Clear {
         Clear::new(
             &(0..self.0.password_length)
-                .map(|_| {
-                    self.0
-                        .charset
-                        .chars()
-                        .choose(rng)
-                        .expect("charset should not be empty")
-                })
+                .map(|_| self.0.charset.chars().choose(rng).expect("charset should not be empty"))
                 .collect::<String>(),
         )
     }
@@ -86,20 +86,14 @@ impl RainbowTableBuilder {
         lines.next().ok_or(anyhow!("invalid file format"))?;
 
         // Second line is password length followed by charset
-        let mut line = lines
-            .next()
-            .ok_or(anyhow!("invalid file format"))?
-            .split(' ');
+        let mut line = lines.next().ok_or(anyhow!("invalid file format"))?.split(' ');
         let (password_length, charset) = (
             line.next().ok_or(anyhow!("invalid format"))?.parse()?,
             line.next().ok_or(anyhow!("invalid format"))?.to_owned(),
         );
 
         // Third line is number of chains followed by chain length
-        let mut line = lines
-            .next()
-            .ok_or(anyhow!("invalid file format"))?
-            .split(' ');
+        let mut line = lines.next().ok_or(anyhow!("invalid file format"))?.split(' ');
         let (chain_number, chain_length) = (
             line.next().ok_or(anyhow!("invalid format"))?.parse()?,
             line.next().ok_or(anyhow!("invalid format"))?.parse()?,
@@ -110,6 +104,8 @@ impl RainbowTableBuilder {
             chain_length,
             chain_number,
             password_length,
+            #[cfg(debug_assertions)]
+            debug: false,
         };
 
         // The rest is start and end of a chain (one per line)

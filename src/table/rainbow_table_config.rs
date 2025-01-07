@@ -3,6 +3,8 @@ pub struct RainbowTableConfig {
     pub chain_length: u32,
     pub chain_number: usize,
     pub password_length: u32,
+    #[cfg(debug_assertions)]
+    pub debug: bool,
 }
 
 impl RainbowTableConfig {
