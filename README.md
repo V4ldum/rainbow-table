@@ -2,7 +2,7 @@
 
 This is a proof of concept to understand how a Rainbow Table is generated and used to crack hashes.
 
-Copyright
+## Copyright
 
 This code is provided "as-is". You are permitted to use or modify the application for personal purposes only.
 
